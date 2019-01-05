@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
@@ -12,19 +13,25 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Toast;
 
 
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import cz.msebera.android.httpclient.Header;
 
 
 public class MainActivity extends AppCompatActivity {
 
     // Constants:
     // TODO: Create the base URL
-    private final String BASE_URL = "https://apiv2.bitcoin ...";
+    private final String BASE_URL = " https://apiv2.bitcoinaverage.com/indices/global/ticker/";
+    String GETURL;
 
     // Member Variables:
     TextView mPriceTextView;
+    final String TAG = "Bitcoin";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,33 +51,56 @@ public class MainActivity extends AppCompatActivity {
         // Apply the adapter to the spinner
         spinner.setAdapter(adapter);
 
-        // TODO: Set an OnItemSelected listener on the spinner
+        // TODO: Set an OnItemSelected listener on the spinner;
+        spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+              String currency = parent.getItemAtPosition(position).toString();
+              Log.d("Bitcoin","currency selected is" +currency);
+              GETURL = BASE_URL+"BTC"+currency;
+              letsDoSomeNetworking(GETURL);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                Log.d("Bitcoin", "Nothing selected");
+
+            }
+        });
+
 
     }
 
     // TODO: complete the letsDoSomeNetworking() method
     private void letsDoSomeNetworking(String url) {
 
-//        AsyncHttpClient client = new AsyncHttpClient();
-//        client.get(WEATHER_URL, params, new JsonHttpResponseHandler() {
-//
-//            @Override
-//            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-//                // called when response HTTP status is "200 OK"
-//                Log.d("Clima", "JSON: " + response.toString());
-//                WeatherDataModel weatherData = WeatherDataModel.fromJson(response);
-//                updateUI(weatherData);
-//            }
-//
-//            @Override
-//            public void onFailure(int statusCode, Header[] headers, Throwable e, JSONObject response) {
-//                // called when response HTTP status is "4XX" (eg. 401, 403, 404)
-//                Log.d("Clima", "Request fail! Status code: " + statusCode);
-//                Log.d("Clima", "Fail response: " + response);
-//                Log.e("ERROR", e.toString());
-//                Toast.makeText(WeatherController.this, "Request Failed", Toast.LENGTH_SHORT).show();
-//            }
-//        });
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.get(url, null, new JsonHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                // called when response HTTP status is "200 OK"
+                Log.d(TAG, "JSON: " + response.toString());
+                try {
+                    mPriceTextView.setText(response.getString("ask"));
+                }catch (JSONException e)
+                {
+                    e.printStackTrace();
+                }
+
+
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable e, JSONObject response) {
+                // called when response HTTP status is "4XX" (eg. 401, 403, 404)
+                Log.d(TAG, "Request fail! Status code: " + statusCode);
+                Log.d(TAG, "Fail response: " + response);
+                Log.e("ERROR", e.toString());
+
+            }
+        });
 
 
     }
